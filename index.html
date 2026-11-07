@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#11151a">
+  <meta name="description" content="Explore Space Station 14 maps, reveal utility networks, and find entities by name, prototype, or map ID.">
+  <title>SS14 · Map Viewer</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231a2027'/%3E%3Cpath d='M7 10h18v12H7zm6-4v20m6-20v20M3 16h26' fill='none' stroke='%23e5b55c' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <button id="sidebar-toggle" class="icon-button mobile-only" aria-label="Toggle navigation">☰</button>
+    <a class="brand" href="./" aria-label="SS14 Map Viewer home"><span class="brand-icon" aria-hidden="true">✣</span><span>SS14 <b>MAP VIEWER</b></span></a>
+    <span class="top-divider"></span><span class="workbench">STATION CARTOGRAPHY</span>
+    <div class="top-right"><span class="status-dot"></span><span id="source-status">LOCAL RESOURCE INDEX</span><button class="quiet-button" id="help-button" title="Controls and about">? <span>Controls</span></button></div>
+  </header>
+  <main class="workspace">
+    <aside id="sidebar" class="sidebar" aria-label="Map controls">
+      <section class="source-section">
+        <div class="section-heading"><span>01 / MAP SOURCE</span><span class="tiny-label" id="map-total">— MAPS</span></div>
+        <button id="map-picker" class="map-picker" aria-haspopup="dialog"><span class="map-symbol" aria-hidden="true">▧</span><span class="map-choice"><strong id="chosen-map">Select a map</strong><small id="chosen-path">Resources/Maps</small></span><span aria-hidden="true">⌄</span></button>
+        <button id="import-button" class="import-button"><span aria-hidden="true">↥</span> Open map YAML <span class="file-tag">.yml</span></button>
+        <input id="file-input" type="file" accept=".yml,.yaml" hidden>
+        <label class="field-label" for="grid-select">GRID</label><select id="grid-select" disabled><option>Loading grids…</option></select>
+      </section>
+      <section class="layer-section">
+        <div class="section-heading"><span>02 / VIEW LAYERS</span><span class="tiny-label">LIVE</span></div>
+        <label class="layer-row"><span class="layer-icon wire-icon" aria-hidden="true">ϟ</span><span class="layer-label">Wires <small>Power network</small></span><span class="layer-count" id="wires-count">—</span><input type="checkbox" id="wires" role="switch"><span class="switch" aria-hidden="true"></span></label>
+        <label class="layer-row"><span class="layer-icon pipe-icon" aria-hidden="true">╋</span><span class="layer-label">Pipes <small>Atmospherics</small></span><span class="layer-count" id="pipes-count">—</span><input type="checkbox" id="pipes" role="switch"><span class="switch" aria-hidden="true"></span></label>
+        <label class="layer-row"><span class="layer-icon disposal-icon" aria-hidden="true">↳</span><span class="layer-label">Disposals <small>Waste routing</small></span><span class="layer-count" id="disposals-count">—</span><input type="checkbox" id="disposals" role="switch"><span class="switch" aria-hidden="true"></span></label>
+        <div class="secondary-toggles"><label><input type="checkbox" id="tile-grid"> Tile grid</label><label><input type="checkbox" id="entities-visible" checked> Entities</label></div>
+      </section>
+      <section class="search-section">
+        <div class="section-heading"><span>03 / ENTITY SEARCH</span><kbd>/</kbd></div>
+        <div class="search-field"><span aria-hidden="true">⌕</span><input id="entity-search" type="search" placeholder="Name, prototype, or #ID…" aria-label="Search entities by name, prototype, or map ID" autocomplete="off"><button id="clear-search" class="clear-search" aria-label="Clear search" hidden>×</button></div>
+        <div class="search-meta"><select id="search-mode" aria-label="Search field"><option value="all">All fields</option><option value="name">Name</option><option value="prototype">Prototype ID</option><option value="id">Map entity ID</option></select><span id="result-count" aria-live="polite">Find an entity</span></div>
+        <div id="search-results" class="search-results"><div class="search-empty"><span aria-hidden="true">⌖</span><strong>Find your way around</strong><p>Search a name, prototype ID, or the entity’s numeric map ID.</p><small>Try “airlock”, “CableHV”, or “#42”</small></div></div>
+      </section>
+      <footer class="sidebar-footer"><span class="status-dot"></span> READ-ONLY EXPLORER <span>v1.0</span></footer>
+    </aside>
+    <section class="map-area" aria-label="Interactive map">
+      <div class="viewport-toolbar"><div class="map-breadcrumb"><span class="tiny-label">MAP</span><strong id="map-title">Station overview</strong><span id="map-category" class="category-tag">SS14</span></div><div class="toolbar-actions"><button id="fit-button" class="quiet-button" title="Fit map (F)">⌗ <span>Fit map</span></button><button id="reset-button" class="quiet-button" title="View at 100%">1:1</button></div></div>
+      <div id="viewport" class="viewport" tabindex="0" aria-label="Map. Drag to pan, scroll to zoom. Use arrow keys to pan and plus or minus to zoom.">
+        <canvas id="map-canvas" aria-label="Space Station 14 map"></canvas>
+        <div id="loading" class="loading"><div class="loading-cross" aria-hidden="true">✣</div><strong id="loading-title">Indexing the station</strong><span id="loading-detail">Loading sprites and map data…</span><div class="loading-track"><span></span></div></div>
+        <div id="map-error" class="map-error" hidden><strong>Couldn’t open this map</strong><p id="error-detail"></p><button id="retry-button">Try again</button></div>
+        <div class="map-label"><span class="status-dot"></span><span id="view-label">STATION OVERVIEW</span></div>
+        <div id="layer-legend" class="layer-legend" hidden></div>
+        <div class="zoom-controls"><button id="zoom-in" aria-label="Zoom in" title="Zoom in (+)">+</button><output id="zoom-label">100%</output><button id="zoom-out" aria-label="Zoom out" title="Zoom out (−)">−</button></div>
+        <div class="minimap-wrap"><span>OVERVIEW <button id="minimap-fit" title="Fit entire grid" aria-label="Fit entire grid">↗</button></span><canvas id="minimap" width="196" height="140" aria-label="Map overview; click to navigate"></canvas></div>
+        <div class="map-hint" id="map-hint"><span>DRAG</span> to pan <i>·</i> <span>SCROLL</span> to zoom <i>·</i> click to inspect</div>
+        <div id="hover-label" class="hover-label" hidden></div>
+      </div>
+      <div id="inspector" class="inspector"><div class="inspector-placeholder"><span aria-hidden="true">⌖</span><div><strong>Explore the station</strong><p>Select an entity on the map or in search results to inspect it.</p></div></div></div>
+      <footer class="map-status"><div><span class="status-dot"></span><span id="load-status" role="status">Preparing viewer</span></div><div><span id="tile-count">— tiles</span><span id="entity-count">— entities</span><span id="coordinates">X — &nbsp; Y —</span><span class="scale-indicator" id="scale-label">1 tile = 1 m</span></div></footer>
+    </section>
+  </main>
+  <dialog id="map-dialog" class="map-dialog"><div class="dialog-heading"><div><span class="eyebrow">MAP LIBRARY</span><h1>Choose your destination</h1></div><button id="close-map-dialog" class="icon-button" aria-label="Close map library">×</button></div><div class="search-field"><span aria-hidden="true">⌕</span><input id="map-filter" type="search" placeholder="Search maps or YAML paths…" aria-label="Filter maps"></div><div class="map-tabs" role="group" aria-label="Map category"><button class="active" data-category="stations">Station maps</button><button data-category="wrecks">Wrecks</button><button data-category="shuttles">Shuttles</button><button data-category="all">All maps</button></div><div id="map-list" class="map-list"></div><div class="dialog-footer"><span id="map-list-count"></span><span>or open your own .yml file</span></div></dialog>
+  <dialog id="help-dialog" class="help-dialog"><div class="dialog-heading"><div><span class="eyebrow">FIELD GUIDE</span><h1>A little orientation</h1></div><button id="close-help-dialog" class="icon-button" aria-label="Close controls">×</button></div><dl class="shortcuts"><dt>Pan</dt><dd>Drag / arrow keys</dd><dt>Zoom</dt><dd>Mouse wheel / pinch / + −</dd><dt>Fit map</dt><dd><kbd>F</kbd></dd><dt>Search entities</dt><dd><kbd>/</kbd></dd><dt>Inspect a tile</dt><dd>Click the map</dd><dt>Clear selection</dt><dd><kbd>Esc</kbd></dd></dl><p>Toggle utility layers to reveal networks beneath floors. Selecting a hidden utility entity reveals its layer automatically. Search includes contained entities; their location follows their container.</p><p>This is a static map preview. Sprites use their initial appearance; runtime lighting, animated states, generated contents, and some in-game visualizers are not simulated.</p><p class="attribution">Map and sprite data from this Space Station 14 checkout. Sprite license and author records are preserved in <a href="assets/credits.json" target="_blank" rel="noopener">asset credits</a>. Uploaded YAML stays in your browser.</p></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>
